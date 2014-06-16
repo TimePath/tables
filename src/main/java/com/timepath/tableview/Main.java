@@ -94,7 +94,7 @@ public class Main extends JFrame implements RowSetListener {
     private void init(final Connection connection) throws SQLException {
         Statement stmt = null;
         try {
-            for(String sql : IOUtils.toString(this.getClass().getResourceAsStream("init.sql")).split(";")) {
+            for(String sql : IOUtils.toString(this.getClass().getResourceAsStream("/init.sql")).split(";")) {
                 stmt = connection.createStatement();
                 stmt.execute(sql);
             }

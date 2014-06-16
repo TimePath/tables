@@ -28,4 +28,4 @@ CREATE TABLE pathnames (
     name varchar(20) NOT NULL,
     fd int REFERENCES descriptors ( id ),
     CONSTRAINT nodupes UNIQUE ( parent, name )
-);
+)
