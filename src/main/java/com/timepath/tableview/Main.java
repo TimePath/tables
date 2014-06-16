@@ -15,19 +15,23 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 public class Main extends JFrame implements RowSetListener {
 
     JDBCUtilities settings;
-    Connection    conn;
+    Connection conn;
     JTabbedPane tabs = new JTabbedPane();
 
-    public Main(JDBCUtilities settingsArg) throws SQLException {
+    public Main(JDBCUtilities settingsArg) throws SQLException, IOException {
         super("Table viewer");
         this.settings = settingsArg;
         conn = settings.getConnection();
         init(conn);
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 try {
                     conn.close();
@@ -37,13 +41,13 @@ public class Main extends JFrame implements RowSetListener {
                 System.exit(0);
             }
         });
-        String[] types = { "TABLE" };
+        String[] types = {"TABLE"};
         ResultSet rs = conn.getMetaData().getTables(null, null, "%", types);
         while(rs.next()) {
             String name = rs.getString("TABLE_NAME");
             JTable table;
             table = new JTable(); // Displays the table
-            JDBCTable model = new JDBCTable(getContentsOfCoffeesTable(name));
+            JDBCTable model = new JDBCTable(getContentsOfTable(name));
             model.addEventHandlersToRowSet(this);
             table.setModel(model);
             tabs.add(name, new JScrollPane(table));
@@ -76,7 +80,7 @@ public class Main extends JFrame implements RowSetListener {
         }
     }
 
-    public CachedRowSet getContentsOfCoffeesTable(String table) throws SQLException {
+    public CachedRowSet getContentsOfTable(String table) throws SQLException {
         CachedRowSet crs = null;
         try {
             crs = new CachedRowSetImpl();
@@ -91,25 +95,32 @@ public class Main extends JFrame implements RowSetListener {
         return crs;
     }
 
-    private void init(final Connection connection) throws SQLException {
-        Statement stmt = null;
-        try {
-            for(String sql : IOUtils.toString(this.getClass().getResourceAsStream("/init.sql")).split(";")) {
+    private void init(final Connection connection) throws IOException {
+        for(String sql : IOUtils.toString(this.getClass().getResourceAsStream("/init.sql")).split(Pattern.quote("$$"))) {
+            Statement stmt = null;
+            try {
                 stmt = connection.createStatement();
                 stmt.execute(sql);
+            } catch(SQLException e) {
+                JDBCUtilities.printSQLException(e);
+            } finally {
+                if(stmt != null) {
+                    try {
+                        stmt.close();
+                    } catch(SQLException ex) {
+                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
             }
-        } catch(SQLException e) {
-            JDBCUtilities.printSQLException(e);
-        } catch(IOException e) {
-            e.printStackTrace();
-        } finally {
-            if(stmt != null) { stmt.close(); }
         }
     }
 
-    public void rowSetChanged(RowSetEvent event) { }
+    public void rowSetChanged(RowSetEvent event) {
+    }
 
-    public void rowChanged(RowSetEvent event) { }
+    public void rowChanged(RowSetEvent event) {
+    }
 
-    public void cursorMoved(RowSetEvent event) { }
+    public void cursorMoved(RowSetEvent event) {
+    }
 }
